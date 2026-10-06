@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/widget/loading_indicator.dart';
@@ -291,7 +292,7 @@ class _RatingReviewDialogState extends State<RatingReviewDialog> {
         if (!didPop) _requestClose();
       },
       child: CallbackShortcuts(
-        bindings: {
+        bindings: TvService.isTelevision ? const {} : {
           const SingleActivator(LogicalKeyboardKey.escape): _requestClose,
           const SingleActivator(LogicalKeyboardKey.enter, control: true):
               _submit,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kazumi/bean/appbar/sys_app_bar.dart';
+import 'package:kazumi/bean/widget/tv_input_support.dart';
 
 class SettingsPaneScope extends InheritedWidget {
   const SettingsPaneScope({
@@ -80,11 +81,13 @@ class SettingsDetailScaffold extends StatelessWidget {
     }
 
     // Keep routed panes opaque during transitions.
-    return Scaffold(
-      appBar: appBar,
-      body: body,
-      floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottomNavigationBar,
+    return TvInputGuard(
+      child: Scaffold(
+        appBar: appBar,
+        body: body,
+        floatingActionButton: floatingActionButton,
+        bottomNavigationBar: bottomNavigationBar,
+      ),
     );
   }
 }

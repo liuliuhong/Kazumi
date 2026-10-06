@@ -9,6 +9,8 @@ import 'package:kazumi/request/core/network_config.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/network/bangumi_acceleration.dart';
 import 'package:kazumi/services/network/bangumi_ech_resolver.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
+import 'package:kazumi/utils/bangumi_mirror_credentials.dart';
 
 const _echRequestKey = 'bangumiEch';
 
@@ -26,6 +28,19 @@ class BangumiAccelerationInterceptor extends Interceptor {
           options.queryParameters = {};
           options.extra[_echRequestKey] = true;
         case BangumiAcceleration.mirror:
+          final protectedPath =
+              (options.method == 'POST' && uri.path == '/v0/search/subjects') ||
+              (options.method == 'GET' &&
+                  uri.path.startsWith('/p1/') &&
+                  uri.path.endsWith('/comments'));
+          // Locally built TV packages do not have the upstream mirror's
+          // release signing credentials. These endpoints are public upstream.
+          if (TvService.isTelevision &&
+              protectedPath &&
+              (bangumiMirrorCredentials['id']!.isEmpty ||
+                  bangumiMirrorCredentials['value']!.isEmpty)) {
+            break;
+          }
           options.path =
               ApiEndpoints.bangumiMirrorDomain +
               uri.path +

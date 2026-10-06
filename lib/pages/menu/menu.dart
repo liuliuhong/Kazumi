@@ -6,6 +6,9 @@ import 'package:kazumi/bean/widget/embedded_native_control_area.dart';
 import 'package:kazumi/navigation.dart';
 import 'package:kazumi/pages/menu/route_visibility.dart';
 import 'package:kazumi/pages/router.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
+import 'package:kazumi/bean/widget/tv_menu_support.dart';
+import 'package:kazumi/bean/widget/tv_navigation_rail.dart';
 
 class ScaffoldMenu extends StatefulWidget {
   const ScaffoldMenu({super.key, required this.location});
@@ -20,10 +23,49 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   final _outletKey = GlobalKey<RouterOutletState>();
   late int _selectedIndex = menu.indexForPath(widget.location);
   DateTime? _lastExitPromptAt;
+  final _tvSearchFocus = FocusNode(debugLabel: 'TV search');
+  final _tvShellFocus = FocusNode(canRequestFocus: false);
+  FocusNode? _tvContentFocus;
+
+  KeyEventResult _handleTvNavigation(KeyEvent event) {
+    if (!TvService.isTelevision ||
+        _isCovered ||
+        event is! KeyDownEvent ||
+        !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      return KeyEventResult.ignored;
+    }
+    final focused = FocusManager.instance.primaryFocus;
+    if (focused == null) {
+      return KeyEventResult.ignored;
+    }
+    if (focused == _tvSearchFocus &&
+        event.logicalKey == LogicalKeyboardKey.arrowRight &&
+        _tvContentFocus?.context != null) {
+      _tvContentFocus!.requestFocus();
+      return KeyEventResult.handled;
+    }
+    // RouterOutlet has its own focus scope. Let the remote cross its left
+    // edge into the shell's search control, then return to the same item.
+    if (focused.rect.left >= 80) {
+      _tvContentFocus = focused;
+      if (event.logicalKey == LogicalKeyboardKey.arrowLeft &&
+          focused.rect.left <= 112) {
+        _tvSearchFocus.requestFocus();
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
 
   /// The shell sits at the bottom of the root stack and stays mounted while
   /// other pages cover it, so it publishes that state for its subtree.
   bool _isCovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addEarlyKeyEventHandler(_handleTvNavigation);
+  }
 
   @override
   void didUpdateWidget(covariant ScaffoldMenu oldWidget) {
@@ -44,6 +86,9 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
 
   @override
   void dispose() {
+    FocusManager.instance.removeEarlyKeyEventHandler(_handleTvNavigation);
+    _tvShellFocus.dispose();
+    _tvSearchFocus.dispose();
     rootRouteObserver.unsubscribe(this);
     super.dispose();
   }
@@ -73,6 +118,7 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   }
 
   void _handleSystemBack(BuildContext context) {
+    if (TvService.isTelevision && TvMenuSupport.closeForBack()) return;
     if (_outletKey.currentState?.maybePop() ?? false) {
       _lastExitPromptAt = null;
       return;
@@ -175,47 +221,56 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
     );
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      body: Row(
-        children: [
-          EmbeddedNativeControlArea(
-            child: NavigationRail(
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-              groupAlignment: 1,
-              leading: FloatingActionButton(
-                elevation: 0,
-                heroTag: null,
-                onPressed: () => context.pushNamed('/search/'),
-                child: const Icon(Icons.search),
+      body: Focus(
+        focusNode: _tvShellFocus,
+        child: Row(
+          children: [
+            EmbeddedNativeControlArea(
+              child: TvNavigationRail(
+                child: NavigationRail(
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainer,
+                  groupAlignment: 1,
+                  leading: FloatingActionButton(
+                    focusNode: _tvSearchFocus,
+                    autofocus: TvService.isTelevision,
+                    elevation: 0,
+                    heroTag: null,
+                    onPressed: () => context.pushNamed('/search/'),
+                    child: const Icon(Icons.search),
+                  ),
+                  labelType: NavigationRailLabelType.selected,
+                  destinations: const <NavigationRailDestination>[
+                    NavigationRailDestination(
+                      selectedIcon: Icon(Icons.home),
+                      icon: Icon(Icons.home_outlined),
+                      label: Text('推荐'),
+                    ),
+                    NavigationRailDestination(
+                      selectedIcon: Icon(Icons.timeline),
+                      icon: Icon(Icons.timeline_outlined),
+                      label: Text('时间表'),
+                    ),
+                    NavigationRailDestination(
+                      selectedIcon: Icon(Icons.favorite),
+                      icon: Icon(Icons.favorite_border),
+                      label: Text('追番'),
+                    ),
+                    NavigationRailDestination(
+                      selectedIcon: Icon(Icons.settings),
+                      icon: Icon(Icons.settings_outlined),
+                      label: Text('我的'),
+                    ),
+                  ],
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: _selectDestination,
+                ),
               ),
-              labelType: NavigationRailLabelType.selected,
-              destinations: const <NavigationRailDestination>[
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.home),
-                  icon: Icon(Icons.home_outlined),
-                  label: Text('推荐'),
-                ),
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.timeline),
-                  icon: Icon(Icons.timeline_outlined),
-                  label: Text('时间表'),
-                ),
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.favorite),
-                  icon: Icon(Icons.favorite_border),
-                  label: Text('追番'),
-                ),
-                NavigationRailDestination(
-                  selectedIcon: Icon(Icons.settings),
-                  icon: Icon(Icons.settings_outlined),
-                  label: Text('我的'),
-                ),
-              ],
-              selectedIndex: selectedIndex,
-              onDestinationSelected: _selectDestination,
             ),
-          ),
-          Expanded(child: _outlet(context, borderRadius: borderRadius)),
-        ],
+            Expanded(child: _outlet(context, borderRadius: borderRadius)),
+          ],
+        ),
       ),
     );
   }

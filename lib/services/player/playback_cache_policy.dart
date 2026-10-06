@@ -5,16 +5,18 @@ import 'package:kazumi/services/network/metered_network_service.dart';
 import 'package:kazumi/services/player/low_memory_mode.dart';
 import 'package:kazumi/utils/async_serial_queue.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 
 class PlaybackCachePolicy {
   PlaybackCachePolicy({
     required bool Function() isLocalPlayback,
     required Player? Function() currentPlayer,
-  })  : _isLocalPlayback = isLocalPlayback,
-        _currentPlayer = currentPlayer;
+  }) : _isLocalPlayback = isLocalPlayback,
+       _currentPlayer = currentPlayer;
 
   static const int _lowMemoryBufferSize = 2 * 1024 * 1024;
   static const int _defaultBufferSize = 1500 * 1024 * 1024;
+  static const int _tvBufferSize = 64 * 1024 * 1024;
 
   final bool Function() _isLocalPlayback;
   final Player? Function() _currentPlayer;
@@ -27,12 +29,15 @@ class PlaybackCachePolicy {
       !_isLocalPlayback() &&
       MeteredNetworkService.isMetered;
 
-  int get bufferSize => LowMemoryMode.current.isEnabled(
+  int get bufferSize =>
+      LowMemoryMode.current.isEnabled(
         isMetered: MeteredNetworkService.isMetered,
         isLocalPlayback: _isLocalPlayback(),
       )
-          ? _lowMemoryBufferSize
-          : _defaultBufferSize;
+      ? _lowMemoryBufferSize
+      : TvService.isTelevision
+      ? _tvBufferSize
+      : _defaultBufferSize;
 
   void startWatching() {
     if (_settingsSubscription != null) {

@@ -1,4 +1,5 @@
 import 'package:kazumi/services/player/syncplay_endpoint.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 
 enum SettingGroup {
   player,
@@ -380,10 +381,14 @@ class SettingsKeys {
     true,
     group: SettingGroup.player,
   );
+  static String _defaultAndroidVideoRenderer(SettingContext context) =>
+      TvService.isTelevision ? 'mediacodec_embed' : 'auto';
+
   static const androidVideoRenderer = SettingKey<String>(
     _SettingBoxKey.androidVideoRenderer,
     'auto',
     group: SettingGroup.player,
+    defaultResolver: _defaultAndroidVideoRenderer,
   );
   static const androidAutoEnterPIP = SettingKey<bool>(
     _SettingBoxKey.androidAutoEnterPIP,

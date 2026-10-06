@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:kazumi/bean/widget/kazumi_menu.dart';
 import 'package:kazumi/pages/player/controller/player_screenshot_controller.dart';
@@ -253,7 +254,7 @@ class _PlayerScreenshotSheetState extends State<_PlayerScreenshotSheet> {
     builder: (context, child) =>
         PopScope(canPop: !collection.saving, child: child),
     child: CallbackShortcuts(
-      bindings: {
+      bindings: TvService.isTelevision ? const {} : {
         const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _step(-1),
         const SingleActivator(LogicalKeyboardKey.arrowRight): () => _step(1),
         const SingleActivator(LogicalKeyboardKey.space): _toggle,

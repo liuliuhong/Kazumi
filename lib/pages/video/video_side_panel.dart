@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:kazumi/bean/widget/side_panel_transition.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 
 class VideoSidePanel extends StatefulWidget {
   const VideoSidePanel({
@@ -29,8 +30,10 @@ class VideoSidePanelState extends State<VideoSidePanel>
     vsync: this,
     duration: SidePanelTransition.duration,
   );
-  late final Animation<double> _opacity =
-      _animation.drive(CurveTween(curve: Curves.easeIn));
+  late final Animation<double> _opacity = _animation.drive(
+    CurveTween(curve: Curves.easeIn),
+  );
+  final _tvFocus = FocusScopeNode(debugLabel: 'TV episode panel');
 
   bool get _isOpening =>
       _animation.status == AnimationStatus.forward ||
@@ -46,6 +49,11 @@ class VideoSidePanelState extends State<VideoSidePanel>
         _animation.forward();
       }
       widget.onOpened?.call();
+      if (TvService.isTelevision) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _isOpening) _tvFocus.nextFocus();
+        });
+      }
     }
   }
 
@@ -67,17 +75,25 @@ class VideoSidePanelState extends State<VideoSidePanel>
 
   @override
   void dispose() {
+    _tvFocus.dispose();
     _animation.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, constraints) => AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            if (_animation.isDismissed) return const SizedBox.shrink();
-            return Stack(
+    builder: (context, constraints) => AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        if (_animation.isDismissed) return const SizedBox.shrink();
+        return PopScope(
+          canPop: !TvService.isTelevision,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && TvService.isTelevision) close();
+          },
+          child: FocusScope(
+            node: _tvFocus,
+            child: Stack(
               alignment: Alignment.centerRight,
               children: [
                 FadeTransition(
@@ -102,28 +118,32 @@ class VideoSidePanelState extends State<VideoSidePanel>
                 ),
                 SidePanelTransition(animation: _animation, child: child!),
               ],
-            );
-          },
-          child: SizedBox(
-            // Keep space outside the panel for dismissal.
-            width: math.min(constraints.maxWidth * 0.9,
-                (constraints.maxWidth / 3).clamp(320.0, 420.0)),
-            height: constraints.maxHeight,
-            child: Material(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadiusDirectional.only(
-                topStart: Radius.circular(28),
-                bottomStart: Radius.circular(28),
-              ),
-              clipBehavior: Clip.antiAlias,
-              // Consume the hidden status-bar inset for the entire overlay.
-              child: MediaQuery.removePadding(
-                context: context,
-                removeTop: true,
-                child: SafeArea(child: widget.child),
-              ),
             ),
           ),
+        );
+      },
+      child: SizedBox(
+        // Keep space outside the panel for dismissal.
+        width: math.min(
+          constraints.maxWidth * 0.9,
+          (constraints.maxWidth / 3).clamp(320.0, 420.0),
         ),
-      );
+        height: constraints.maxHeight,
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadiusDirectional.only(
+            topStart: Radius.circular(28),
+            bottomStart: Radius.circular(28),
+          ),
+          clipBehavior: Clip.antiAlias,
+          // Consume the hidden status-bar inset for the entire overlay.
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: SafeArea(child: widget.child),
+          ),
+        ),
+      ),
+    ),
+  );
 }

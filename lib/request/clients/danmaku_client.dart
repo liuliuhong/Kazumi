@@ -16,6 +16,7 @@ class DanmakuClient {
     Map<String, dynamic> headers = const {},
     CancelToken? cancelToken,
   }) async {
+    if (!hasDandanCredentials) throw DanmakuCredentialsException();
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final uri = Uri.parse(url);
     final requestHeaders = <String, dynamic>{

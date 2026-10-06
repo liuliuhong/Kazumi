@@ -22,6 +22,11 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+// Match the Dart TV switch without introducing flavors into existing builds.
+def kazumiTvBuild = (project.findProperty('dart-defines') ?: '').split(',').any {
+    new String(it.decodeBase64(), 'UTF-8') == 'KAZUMI_TV=true'
+}
+
 android {
     namespace "com.example.kazumi"
     compileSdk flutter.compileSdkVersion
@@ -44,7 +49,12 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.predidit.kazumi"
+        applicationId(kazumiTvBuild ? "com.predidit.kazumi.tv" : "com.predidit.kazumi")
+        manifestPlaceholders += [
+            kazumiAppLabel: kazumiTvBuild ? "Kazumi TV" : "Kazumi",
+            kazumiLauncherCategory: kazumiTvBuild ? "android.intent.category.LEANBACK_LAUNCHER" : "android.intent.category.DEFAULT",
+            kazumiOrientation: kazumiTvBuild ? "landscape" : "unspecified"
+        ]
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion flutter.minSdkVersion

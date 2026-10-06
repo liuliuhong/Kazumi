@@ -38,6 +38,8 @@ import 'package:kazumi/services/player/audio_controller.dart';
 import 'package:kazumi/services/player/timed_shutdown_service.dart';
 import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/services/platform/player_menu_service.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
+import 'package:kazumi/pages/player/tv_player_controls.dart';
 
 class PlayerItem extends StatefulWidget {
   const PlayerItem({
@@ -1418,7 +1420,7 @@ class _PlayerItemState extends State<PlayerItem>
                 },
                 child: SizedBox.expand(
                   child: Stack(alignment: Alignment.center, children: [
-                    PlayerKeyboardShortcuts(
+                    if (!TvService.isTelevision) PlayerKeyboardShortcuts(
                       focusScopeNode: widget.keyboardFocus,
                       actions: keyboardActions,
                       longPressActions: keyboardLongPressActions,
@@ -1522,7 +1524,21 @@ class _PlayerItemState extends State<PlayerItem>
                         animation: _screenshotFeedbackAnimation,
                       ),
                     ),
-                    (Platform.isAndroid &&
+                    TvService.isTelevision
+                        ? TvPlayerControls(
+                            playerFocus: widget.keyboardFocus,
+                            playing: playerController.playback.playing,
+                            position: playerController.playback.currentPosition,
+                            duration: playerController.playback.duration,
+                            onPlayPause: () => playerController.playOrPause(),
+                            onSeek: handleProgressBarSeek,
+                            onNext: () => handlePreNextEpisode('next'),
+                            onPrevious: () => handlePreNextEpisode('prev'),
+                            onDanmaku: handleDanmaku,
+                            onBack: widget.onBackPressed,
+                            onEpisodes: widget.onToggleSidePanel,
+                          )
+                        : (Platform.isAndroid &&
                             (videoPageController.isPip || _pipEnterRequested))
                         ? const SizedBox.shrink()
                         : PlayerItemPanel(
@@ -1562,7 +1578,7 @@ class _PlayerItemState extends State<PlayerItem>
                       top: 25,
                       right: 15,
                       bottom: 15,
-                      child: (isDesktop() || playerController.panel.lockPanel)
+                      child: (TvService.isTelevision || isDesktop() || playerController.panel.lockPanel)
                           ? Container()
                           : PlayerGestureDetector(
                               onSeekStart: () {

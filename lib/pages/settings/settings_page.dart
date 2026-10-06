@@ -7,6 +7,9 @@ import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:kazumi/bean/widget/content_section.dart';
 import 'package:kazumi/pages/settings/player_settings.dart';
 import 'package:kazumi/utils/constants.dart';
+import 'package:kazumi/bean/widget/tv_input_support.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
+import 'package:kazumi/bean/widget/tv_menu_support.dart';
 
 class _SettingsCategory {
   const _SettingsCategory({
@@ -165,6 +168,14 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final _outletKey = GlobalKey<RouterOutletState>();
+  final _paneKey = GlobalKey();
+  final _paneFocus = FocusScopeNode(debugLabel: 'TV settings pane');
+  final _railFocus = <String, FocusNode>{
+    for (final group in _settingsGroups)
+      for (final category in group.categories)
+        category.path: FocusNode(debugLabel: 'TV settings ${category.label}'),
+  };
+  FocusNode? _lastPaneFocus;
   Object? _categoryNavigation;
   late String _location = _normalizePath(widget.location);
 
@@ -184,9 +195,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void _replaceCategory(String path) {
     final outlet = _outletKey.currentState!;
     // Nested pushes leave _location unchanged, so check the stack as well.
-    if (!outlet.canPop &&
-        !_isSecondaryRoute &&
-        _selectedCategoryPath == path) {
+    if (!outlet.canPop && !_isSecondaryRoute && _selectedCategoryPath == path) {
       return;
     }
     _categoryNavigation = null;
@@ -210,6 +219,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _goBack() {
+    if (TvService.isTelevision && TvMenuSupport.closeForBack()) return;
+    if (TvInputSupport.leaveInput()) return;
     if (_outletKey.currentState?.maybePop() ?? false) return;
     _exitSettings();
   }
@@ -218,61 +229,110 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!context.maybePop()) context.navigate('/tab/my');
   }
 
+  bool _handleDirection(TraversalDirection direction) {
+    if (!TvService.isTelevision) return false;
+    final focused = FocusManager.instance.primaryFocus;
+    if (focused == null) return false;
+    if (direction == TraversalDirection.right &&
+        _railFocus.containsValue(focused)) {
+      if (_lastPaneFocus?.context != null && _lastPaneFocus!.canRequestFocus) {
+        _lastPaneFocus!.requestFocus();
+      } else {
+        final candidates = _paneFocus.traversalDescendants.where(
+          (node) => node is! FocusScopeNode,
+        );
+        if (candidates.isNotEmpty) candidates.first.requestFocus();
+      }
+      return true;
+    }
+    final pane = _paneKey.currentContext?.findRenderObject();
+    if (direction == TraversalDirection.left &&
+        pane is RenderBox &&
+        focused.ancestors.contains(_paneFocus) &&
+        focused.rect.left <= pane.localToGlobal(Offset.zero).dx + 80) {
+      _lastPaneFocus = focused;
+      _railFocus[_selectedCategoryPath]?.requestFocus();
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  void dispose() {
+    _paneFocus.dispose();
+    for (final node in _railFocus.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      final wide = constraints.maxWidth > LayoutBreakpoint.compact['width']!;
-      return NavigatorPopHandler<Object?>(
-        onPopWithResult: (_) => _goBack(),
-        child: Scaffold(
-          appBar: wide
-              ? SysAppBar(
-                  title: const Text('设置'),
-                  leading: BackButton(onPressed: _exitSettings),
-                )
-              : null,
-          body: SafeArea(
-            top: false,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Keep the outlet at the same tree position on resize.
-                SizedBox(
-                  width: wide ? 280 : 0,
-                  child: Offstage(
-                    offstage: !wide,
-                    child: _SettingsMenu(
-                      wide: true,
-                      selectedPath: _selectedCategoryPath,
-                      onSelect: _replaceCategory,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: SettingsPaneScope(
-                    embedded: wide,
-                    showBackButton: _isSecondaryRoute,
-                    onBack: _goBack,
-                    child: NotificationListener<_SettingsCategorySelected>(
-                      onNotification: (notification) {
-                        _pushCategory(notification.path);
-                        return true;
-                      },
-                      child: Theme(
-                        data: Theme.of(context).copyWith(
-                          pageTransitionsTheme: settingsPageTransitionsTheme,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth > LayoutBreakpoint.compact['width']!;
+        return NavigatorPopHandler<Object?>(
+          onPopWithResult: (_) => _goBack(),
+          child: TvDirectionalScope(
+            onDirection: _handleDirection,
+            child: Scaffold(
+              appBar: wide
+                  ? SysAppBar(
+                      title: const Text('设置'),
+                      leading: BackButton(onPressed: _exitSettings),
+                    )
+                  : null,
+              body: SafeArea(
+                top: false,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Keep the outlet at the same tree position on resize.
+                    SizedBox(
+                      width: wide ? 280 : 0,
+                      child: Offstage(
+                        offstage: !wide,
+                        child: _SettingsMenu(
+                          wide: true,
+                          selectedPath: _selectedCategoryPath,
+                          onSelect: _replaceCategory,
+                          focusNodes: _railFocus,
                         ),
-                        child: RouterOutlet(key: _outletKey),
                       ),
                     ),
-                  ),
+                    Expanded(
+                      child: FocusScope(
+                        key: _paneKey,
+                        node: _paneFocus,
+                        child: SettingsPaneScope(
+                          embedded: wide,
+                          showBackButton: _isSecondaryRoute,
+                          onBack: _goBack,
+                          child:
+                              NotificationListener<_SettingsCategorySelected>(
+                                onNotification: (notification) {
+                                  _pushCategory(notification.path);
+                                  return true;
+                                },
+                                child: Theme(
+                                  data: Theme.of(context).copyWith(
+                                    pageTransitionsTheme:
+                                        settingsPageTransitionsTheme,
+                                  ),
+                                  child: RouterOutlet(key: _outletKey),
+                                ),
+                              ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 }
 
@@ -287,9 +347,11 @@ class SettingsIndexPage extends StatelessWidget {
     return Scaffold(
       appBar: SysAppBar(
         title: const Text('设置'),
-        leading: BackButton(onPressed: () {
-          if (!context.maybePop()) context.navigate('/tab/my');
-        }),
+        leading: BackButton(
+          onPressed: () {
+            if (!context.maybePop()) context.navigate('/tab/my');
+          },
+        ),
       ),
       body: _SettingsMenu(
         wide: false,
@@ -304,11 +366,13 @@ class _SettingsMenu extends StatelessWidget {
     required this.wide,
     this.selectedPath,
     required this.onSelect,
+    this.focusNodes,
   });
 
   final bool wide;
   final String? selectedPath;
   final ValueChanged<String> onSelect;
+  final Map<String, FocusNode>? focusNodes;
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +394,7 @@ class _SettingsMenu extends StatelessWidget {
                   category: category,
                   selected: selectedPath == category.path,
                   onTap: () => onSelect(category.path),
+                  focusNode: focusNodes?[category.path],
                 ),
             ] else
               Padding(
@@ -358,11 +423,13 @@ class _RailDestination extends StatelessWidget {
     required this.category,
     required this.selected,
     required this.onTap,
+    this.focusNode,
   });
 
   final _SettingsCategory category;
   final bool selected;
   final VoidCallback onTap;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -378,6 +445,8 @@ class _RailDestination extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
+          focusNode: focusNode,
+          autofocus: TvService.isTelevision && selected,
           onTap: onTap,
           child: SizedBox(
             height: 56,

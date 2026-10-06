@@ -1,6 +1,9 @@
 package com.example.kazumi
 
 import android.app.PendingIntent
+import android.app.AlertDialog
+import android.app.UiModeManager
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.BroadcastReceiver
@@ -19,6 +22,19 @@ import android.app.PictureInPictureParams
 import android.graphics.drawable.Icon
 import android.util.Rational
 import android.view.View
+import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import android.text.InputType
+import android.util.Base64
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -115,6 +131,51 @@ class MainActivity: AudioServiceActivity() {
             } else if (call.method == "getAndroidSdkVersion") {
                 val sdkVersion = getAndroidSdkVersion()
                 result.success(sdkVersion)
+            } else if (call.method == "isTelevision") {
+                val uiMode = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+                result.success(uiMode.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION ||
+                    packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK))
+            } else if (call.method == "showTvSearchInput") {
+                showTvSearchInput(call.arguments as? String ?: "", result)
+            } else if (call.method == "showTvTextInput") {
+                showTvSearchInput(call.argument<String>("text") ?: "", result,
+                    call.argument<String>("title") ?: "输入文本",
+                    call.argument<Boolean>("obscure") ?: false,
+                    call.argument<Boolean>("numeric") ?: false, false)
+            } else if (call.method == "getTvDanmakuCredentials") {
+                val prefs = getSharedPreferences("kazumi_tv_private", Context.MODE_PRIVATE)
+                val encrypted = prefs.getString("danmaku_secret", null)
+                val iv = prefs.getString("danmaku_iv", null)
+                try {
+                    if (encrypted == null || iv == null) result.success(null) else {
+                        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                        cipher.init(Cipher.DECRYPT_MODE, danmakuKey(), GCMParameterSpec(128, Base64.decode(iv, Base64.NO_WRAP)))
+                        val secret = String(cipher.doFinal(Base64.decode(encrypted, Base64.NO_WRAP)), Charsets.UTF_8)
+                        result.success(mapOf("id" to prefs.getString("danmaku_id", ""), "value" to secret))
+                    }
+                } catch (_: Exception) {
+                    // Device restores do not restore the Android Keystore key.
+                    result.success(null)
+                }
+            } else if (call.method == "setTvDanmakuCredentials") {
+                val id = call.argument<String>("id") ?: ""
+                val secret = call.argument<String>("value") ?: ""
+                val prefs = getSharedPreferences("kazumi_tv_private", Context.MODE_PRIVATE).edit()
+                try {
+                    if (id.isEmpty() || secret.isEmpty()) {
+                        prefs.remove("danmaku_id").remove("danmaku_secret").remove("danmaku_iv")
+                    } else {
+                        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                        cipher.init(Cipher.ENCRYPT_MODE, danmakuKey())
+                        val encrypted = cipher.doFinal(secret.toByteArray(Charsets.UTF_8))
+                        prefs.putString("danmaku_id", id)
+                            .putString("danmaku_secret", Base64.encodeToString(encrypted, Base64.NO_WRAP))
+                            .putString("danmaku_iv", Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+                    }
+                    if (prefs.commit()) result.success(null) else result.error("SAVE_FAILED", "无法保存弹幕凭证", null)
+                } catch (_: Exception) {
+                    result.error("SAVE_FAILED", "无法保存弹幕凭证", null)
+                }
             } else if (call.method == "setSystemBarsHidden") {
                 systemBarsHidden = call.arguments as? Boolean ?: false
                 applySystemBarsState()
@@ -167,6 +228,64 @@ class MainActivity: AudioServiceActivity() {
                 result.notImplemented()
             }
         }
+    }
+
+    private fun danmakuKey(): SecretKey {
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val alias = "kazumi_tv_danmaku"
+        (store.getKey(alias, null) as? SecretKey)?.let { return it }
+        return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").apply {
+            init(KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build())
+        }.generateKey()
+    }
+
+    private fun showTvSearchInput(initialText: String, result: MethodChannel.Result,
+        title: String = "番剧搜索", obscure: Boolean = false,
+        numeric: Boolean = false, search: Boolean = true) {
+        val editor = EditText(this).apply {
+            inputType = if (numeric) InputType.TYPE_CLASS_NUMBER else
+                InputType.TYPE_CLASS_TEXT or (if (obscure) InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
+            setSingleLine(true)
+            imeOptions = if (search) EditorInfo.IME_ACTION_SEARCH else EditorInfo.IME_ACTION_DONE
+            hint = title
+            setText(initialText)
+            setSelection(text.length)
+            setPadding(32, 24, 32, 24)
+        }
+        var completed = false
+        fun finish(value: String?) {
+            if (!completed) {
+                completed = true
+                result.success(value)
+            }
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(editor)
+            .setPositiveButton(if (search) "搜索" else "确定") { _, _ -> finish(editor.text.toString()) }
+            .setNegativeButton("取消") { _, _ -> finish(null) }
+            .create()
+        dialog.setOnDismissListener { finish(null) }
+        editor.setOnEditorActionListener { _, action, _ ->
+            if (action == EditorInfo.IME_ACTION_SEARCH || action == EditorInfo.IME_ACTION_DONE) {
+                finish(editor.text.toString())
+                dialog.dismiss()
+                true
+            } else false
+        }
+        dialog.setOnShowListener {
+            editor.requestFocus()
+            editor.post {
+                val input = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                input.showSoftInput(editor, 0)
+            }
+        }
+        dialog.window?.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        dialog.show()
     }
 
     private fun openWithMime(url: String, mimeType: String) {

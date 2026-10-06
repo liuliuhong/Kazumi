@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'package:kazumi/navigation.dart';
 import 'package:kazumi/utils/constants.dart';
+import 'package:kazumi/bean/widget/tv_input_support.dart';
 
 /// Single-use ownership of a route, including before its first frame.
 class KazumiDialogHandle<T> {
@@ -61,7 +62,7 @@ class KazumiDialog {
       final navigator = Navigator.of(ctx, rootNavigator: true);
       final route = _KazumiDialogRoute<T>(
         context: ctx,
-        builder: builder,
+        builder: (context) => TvInputGuard(child: builder(context)),
         themes: InheritedTheme.capture(from: ctx, to: navigator.context),
         barrierColor: DialogTheme.of(ctx).barrierColor ??
             Theme.of(ctx).dialogTheme.barrierColor ??

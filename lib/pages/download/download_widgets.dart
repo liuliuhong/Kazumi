@@ -6,6 +6,7 @@ import 'package:kazumi/bean/widget/kazumi_menu.dart';
 import 'package:kazumi/bean/widget/loading_indicator.dart';
 import 'package:kazumi/modules/download/download_module.dart';
 import 'package:kazumi/utils/format.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 
 const Duration _kExpandDuration = Duration(milliseconds: 250);
 const Curve _kExpandCurve = Curves.easeInOutCubic;
@@ -37,25 +38,28 @@ class DownloadRecordCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final episodes = record.episodes.values;
     final totalCount = episodes.length;
-    final completedCount =
-        episodes.where((e) => e.status == DownloadStatus.completed).length;
+    final completedCount = episodes
+        .where((e) => e.status == DownloadStatus.completed)
+        .length;
     final activeCount = episodes
-        .where((e) =>
-            e.status == DownloadStatus.downloading ||
-            e.status == DownloadStatus.resolving ||
-            e.status == DownloadStatus.pending)
+        .where(
+          (e) =>
+              e.status == DownloadStatus.downloading ||
+              e.status == DownloadStatus.resolving ||
+              e.status == DownloadStatus.pending,
+        )
         .length;
     final aggregateProgress = totalCount == 0
         ? 0.0
         : episodes.fold<double>(
-              0,
-              (sum, e) =>
-                  sum +
-                  (e.status == DownloadStatus.completed
-                      ? 1.0
-                      : e.progressPercent),
-            ) /
-            totalCount;
+                0,
+                (sum, e) =>
+                    sum +
+                    (e.status == DownloadStatus.completed
+                        ? 1.0
+                        : e.progressPercent),
+              ) /
+              totalCount;
     final allCompleted = completedCount >= totalCount;
 
     var meta = '$completedCount/$totalCount 已完成';
@@ -94,8 +98,9 @@ class DownloadRecordCard extends StatelessWidget {
                       children: [
                         Text(
                           record.bangumiName,
-                          style: textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -124,8 +129,10 @@ class DownloadRecordCard extends StatelessWidget {
                   KazumiMenuButton(
                     animated: false,
                     builder: (context, toggle) => IconButton(
-                      icon: Icon(Icons.more_vert,
-                          color: colorScheme.onSurfaceVariant),
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                       tooltip: '更多操作',
                       onPressed: toggle,
                     ),
@@ -196,12 +203,14 @@ class DownloadEpisodeTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isError = episode.status == DownloadStatus.failed;
-    final showProgress = episode.status == DownloadStatus.downloading ||
+    final showProgress =
+        episode.status == DownloadStatus.downloading ||
         (episode.status == DownloadStatus.paused &&
             episode.progressPercent > 0);
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
+      canRequestFocus: !TvService.isTelevision,
       onTap: onPlay,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

@@ -192,13 +192,16 @@ class _CollectPosterCard extends StatelessWidget {
           ].join('，'),
           child: InkWell(
             onTap: onOpen,
+            canRequestFocus: !TvService.isTelevision,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ExcludeSemantics(
                   child: AspectRatio(
                     aspectRatio: _coverRatio,
-                    child: _CollectCover(item: item),
+                    child: TvService.isTelevision
+                        ? InkWell(onTap: onOpen, child: _CollectCover(item: item))
+                        : _CollectCover(item: item),
                   ),
                 ),
                 Expanded(child: footer),
@@ -246,6 +249,9 @@ class _CollectListTile extends StatelessWidget {
         children: [
           // Isolate menu focus and taps from card navigation.
           Positioned.fill(
+            // The status menu is a separate remote target below this region.
+            // A full-card focus rectangle encloses it and blocks D-pad Down.
+            bottom: TvService.isTelevision ? 60 : 0,
             child: Semantics(
               button: true,
               label: [title, ...metadata].join('，'),

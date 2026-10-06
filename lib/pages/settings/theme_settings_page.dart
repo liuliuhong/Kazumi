@@ -13,6 +13,7 @@ import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/utils/theme.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 
 class ThemeSettingsPage extends StatefulWidget {
   const ThemeSettingsPage({super.key});
@@ -44,23 +45,25 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
 
   void setTheme(Color? color) {
     var defaultDarkTheme = ThemeData(
-        useMaterial3: true,
-        fontFamily: themeProvider.currentFontFamily,
-        brightness: Brightness.dark,
-        colorSchemeSeed: color,
-        progressIndicatorTheme: progressIndicatorTheme2024,
-        sliderTheme: sliderTheme2024,
-        pageTransitionsTheme: pageTransitionsTheme2024);
+      useMaterial3: true,
+      fontFamily: themeProvider.currentFontFamily,
+      brightness: Brightness.dark,
+      colorSchemeSeed: color,
+      progressIndicatorTheme: progressIndicatorTheme2024,
+      sliderTheme: sliderTheme2024,
+      pageTransitionsTheme: pageTransitionsTheme2024,
+    );
     var oledTheme = oledDarkTheme(defaultDarkTheme);
     themeProvider.setTheme(
       ThemeData(
-          useMaterial3: true,
-          fontFamily: themeProvider.currentFontFamily,
-          brightness: Brightness.light,
-          colorSchemeSeed: color,
-          progressIndicatorTheme: progressIndicatorTheme2024,
-          sliderTheme: sliderTheme2024,
-          pageTransitionsTheme: pageTransitionsTheme2024),
+        useMaterial3: true,
+        fontFamily: themeProvider.currentFontFamily,
+        brightness: Brightness.light,
+        colorSchemeSeed: color,
+        progressIndicatorTheme: progressIndicatorTheme2024,
+        sliderTheme: sliderTheme2024,
+        pageTransitionsTheme: pageTransitionsTheme2024,
+      ),
       oledEnhance ? oledTheme : defaultDarkTheme,
     );
     defaultThemeColor = color?.toARGB32().toRadixString(16) ?? 'default';
@@ -69,23 +72,25 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
 
   void resetTheme() {
     var defaultDarkTheme = ThemeData(
-        useMaterial3: true,
-        fontFamily: themeProvider.currentFontFamily,
-        brightness: Brightness.dark,
-        colorSchemeSeed: Colors.green,
-        progressIndicatorTheme: progressIndicatorTheme2024,
-        sliderTheme: sliderTheme2024,
-        pageTransitionsTheme: pageTransitionsTheme2024);
+      useMaterial3: true,
+      fontFamily: themeProvider.currentFontFamily,
+      brightness: Brightness.dark,
+      colorSchemeSeed: Colors.green,
+      progressIndicatorTheme: progressIndicatorTheme2024,
+      sliderTheme: sliderTheme2024,
+      pageTransitionsTheme: pageTransitionsTheme2024,
+    );
     var oledTheme = oledDarkTheme(defaultDarkTheme);
     themeProvider.setTheme(
       ThemeData(
-          useMaterial3: true,
-          fontFamily: themeProvider.currentFontFamily,
-          brightness: Brightness.light,
-          colorSchemeSeed: Colors.green,
-          progressIndicatorTheme: progressIndicatorTheme2024,
-          sliderTheme: sliderTheme2024,
-          pageTransitionsTheme: pageTransitionsTheme2024),
+        useMaterial3: true,
+        fontFamily: themeProvider.currentFontFamily,
+        brightness: Brightness.light,
+        colorSchemeSeed: Colors.green,
+        progressIndicatorTheme: progressIndicatorTheme2024,
+        sliderTheme: sliderTheme2024,
+        pageTransitionsTheme: pageTransitionsTheme2024,
+      ),
       oledEnhance ? oledTheme : defaultDarkTheme,
     );
     defaultThemeColor = 'default';
@@ -110,7 +115,8 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
     // Update Windows title bar theme
     if (Platform.isWindows) {
       await windowManager.setBrightness(
-          themeProvider.isEffectiveDark() ? Brightness.dark : Brightness.light);
+        themeProvider.isEffectiveDark() ? Brightness.dark : Brightness.light,
+      );
     }
   }
 
@@ -146,50 +152,56 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                 leading: Icons.palette_rounded,
                 enabled: !useDynamicColor,
                 onPressed: (_) async {
-                  KazumiDialog.show(builder: (context) {
-                    return AlertDialog(
-                      title: Text('配色方案'),
-                      content: StatefulBuilder(builder:
-                          (BuildContext context, StateSetter setState) {
-                        final List<Map<String, dynamic>> colorThemes =
-                            colorThemeTypes;
-                        return Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 8,
-                          runSpacing: isDesktop() ? 8 : 0,
-                          children: [
-                            ...colorThemes.map(
-                              (e) {
-                                final index = colorThemes.indexOf(e);
-                                return GestureDetector(
-                                  onTap: () {
-                                    index == 0
-                                        ? resetTheme()
-                                        : setTheme(e['color']);
-                                    KazumiDialog.dismiss();
-                                  },
-                                  child: Column(
-                                    children: [
-                                      PaletteCard(
-                                        color: e['color'],
-                                        selected: (e['color']
-                                                    .value
-                                                    .toRadixString(16) ==
-                                                defaultThemeColor ||
-                                            (defaultThemeColor == 'default' &&
-                                                index == 0)),
-                                      ),
-                                      Text(e['label']),
-                                    ],
-                                  ),
+                  KazumiDialog.show(
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text('配色方案'),
+                        content: StatefulBuilder(
+                          builder:
+                              (BuildContext context, StateSetter setState) {
+                                final List<Map<String, dynamic>> colorThemes =
+                                    colorThemeTypes;
+                                return Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: isDesktop() ? 8 : 0,
+                                  children: [
+                                    ...colorThemes.map((e) {
+                                      final index = colorThemes.indexOf(e);
+                                      return InkWell(
+                                        autofocus:
+                                            TvService.isTelevision &&
+                                            index == 0,
+                                        onTap: () {
+                                          index == 0
+                                              ? resetTheme()
+                                              : setTheme(e['color']);
+                                          KazumiDialog.dismiss();
+                                        },
+                                        child: Column(
+                                          children: [
+                                            PaletteCard(
+                                              color: e['color'],
+                                              selected:
+                                                  (e['color'].value
+                                                          .toRadixString(16) ==
+                                                      defaultThemeColor ||
+                                                  (defaultThemeColor ==
+                                                          'default' &&
+                                                      index == 0)),
+                                            ),
+                                            Text(e['label']),
+                                          ],
+                                        ),
+                                      );
+                                    }),
+                                  ],
                                 );
                               },
-                            )
-                          ],
-                        );
-                      }),
-                    );
-                  });
+                        ),
+                      );
+                    },
+                  );
                 },
                 title: Text('配色方案'),
               ),
@@ -199,7 +211,9 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                 onToggle: (value) async {
                   useDynamicColor = value ?? !useDynamicColor;
                   await GStorage.putSetting(
-                      SettingsKeys.useDynamicColor, useDynamicColor);
+                    SettingsKeys.useDynamicColor,
+                    useDynamicColor,
+                  );
                   themeProvider.setDynamic(useDynamicColor);
                   setState(() {});
                 },
@@ -211,7 +225,9 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                 onToggle: (value) async {
                   useSystemFont = value ?? !useSystemFont;
                   await GStorage.putSetting(
-                      SettingsKeys.useSystemFont, useSystemFont);
+                    SettingsKeys.useSystemFont,
+                    useSystemFont,
+                  );
                   themeProvider.setFontFamily(useSystemFont);
                   dynamic color;
                   if (defaultThemeColor == 'default') {
@@ -237,7 +253,9 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                 onToggle: (value) async {
                   oledEnhance = value ?? !oledEnhance;
                   await GStorage.putSetting(
-                      SettingsKeys.oledEnhance, oledEnhance);
+                    SettingsKeys.oledEnhance,
+                    oledEnhance,
+                  );
                   updateOledEnhance();
                   setState(() {});
                 },
@@ -256,7 +274,9 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                   onToggle: (value) async {
                     showWindowButton = value ?? !showWindowButton;
                     await GStorage.putSetting(
-                        SettingsKeys.showWindowButton, showWindowButton);
+                      SettingsKeys.showWindowButton,
+                      showWindowButton,
+                    );
                     setState(() {});
                   },
                   title: Text('使用系统标题栏'),
