@@ -1,6 +1,6 @@
 <div align=center>
 
-<h1>Kazumi</h1>
+<h1>Kazumi（TV版）</h1>
 
 <img src="assets/images/logo/logo_rounded.png" width=200></img>
 
@@ -12,17 +12,13 @@
 <a href="https://trendshift.io/repositories/11432"><img src="https://trendshift.io/api/badge/trendshift/repositories/11432/yearly?language=Dart"></img></a>
 <a href="https://hellogithub.com/repository/Predidit/Kazumi" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=68d824ea55ee4b07aba6fe1dd61ac939&claim_uid=J9Qu6aDd8LT1nU0"/></img></a>
 
-<p>使用 Flutter 开发的基于自定义规则的番剧采集与在线观看程序。使用最多五行基于 <code>Xpath</code> 语法的选择器构建自己的规则。支持规则导入与规则分享。支持基于 <code>Anime4K</code> 的实时超分辨率。绝赞开发中 (～￣▽￣)～</p>
+<p>使用 Flutter 开发的基于自定义规则的番剧采集与在线观看程序。使用最多五行基于 <code>Xpath</code> 语法的选择器构建自己的规则。支持规则导入与规则分享。支持基于 <code>Anime4K</code> 的实时超分辨率。绝赞开发中 (～￣▽￣)～
+只是基于kazumi实现的前段改造，可以使用于32位的电视盒子</p>
 </div>
 
 ## 支持平台
 
-- Android 10 及以上
-- Windows 10 及以上
-- MacOS 10.15 及以上
-- Linux (实验性)
-- iOS 13 及以上 (需要 [侧载](https://kazumi.app/docs/misc/how-to-install-in-ios))
-- HarmonyOS 5.0 及以上 (位于 [分支仓库](https://github.com/ErBWs/Kazumi/releases/latest)，需要 [侧载](https://kazumi.app/docs/misc/how-to-install-in-ohos))
+- Android 10 及以上 32位电视盒子
 
 ## 屏幕截图
 
