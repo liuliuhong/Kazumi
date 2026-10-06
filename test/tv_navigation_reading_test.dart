@@ -4,8 +4,95 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kazumi/bean/widget/tv_app_support.dart';
 import 'package:kazumi/bean/widget/tv_navigation_rail.dart';
 import 'package:kazumi/bean/widget/tv_scroll_reader.dart';
+import 'package:kazumi/bean/widget/tv_input_support.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 
 void main() {
+  testWidgets(
+    'settings categories stay bounded after scrolling; Right enters pane',
+    (tester) async {
+      final categories = List.generate(12, (_) => FocusNode());
+      final pane = FocusNode();
+      final scroll = ScrollController();
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (_, child) => TvAppSupport(child: child!),
+          home: TvDirectionalScope(
+            onDirection: (direction) {
+              if (TvNavigationRail.moveWithin(categories, direction)) {
+                return true;
+              }
+              if (direction == TraversalDirection.right &&
+                  categories.any((n) => n.hasPrimaryFocus)) {
+                pane.requestFocus();
+                return true;
+              }
+              return false;
+            },
+            child: Scaffold(
+              body: Row(
+                children: [
+                  SizedBox(
+                    width: 200,
+                    child: ListView(
+                      controller: scroll,
+                      scrollCacheExtent: const ScrollCacheExtent.pixels(10000),
+                      children: [
+                        for (var i = 0; i < categories.length; i++)
+                          SizedBox(
+                            height: 100,
+                            child: TextButton(
+                              focusNode: categories[i],
+                              onPressed: () {},
+                              child: Text(i == 11 ? '关于' : '设置 $i'),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: TextButton(
+                        focusNode: pane,
+                        onPressed: () {},
+                        child: const Text('内容'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      categories.first.requestFocus();
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 20; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+      }
+      expect(categories.last.hasPrimaryFocus, isTrue);
+      expect(scroll.offset, greaterThan(0));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(pane.hasPrimaryFocus, isTrue);
+      categories.last.requestFocus();
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 20; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+      }
+      expect(categories.first.hasPrimaryFocus, isTrue);
+      expect(scroll.offset, 0);
+      await tester.pumpWidget(const SizedBox());
+      for (final node in categories) {
+        node.dispose();
+      }
+      pane.dispose();
+      scroll.dispose();
+    },
+  );
   testWidgets('rail stops at its ends and crosses to content only with Right', (
     tester,
   ) async {

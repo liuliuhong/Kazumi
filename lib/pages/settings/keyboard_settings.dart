@@ -6,6 +6,7 @@ import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/widget/content_section.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/utils/constants.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 
 class _ShortcutGroup {
   const _ShortcutGroup(this.title, this.functions);
@@ -15,11 +16,21 @@ class _ShortcutGroup {
 }
 
 const List<_ShortcutGroup> _shortcutGroups = [
-  _ShortcutGroup(
-      '播放控制', ['playorpause', 'forward', 'rewind', 'skip', 'next', 'prev']),
+  _ShortcutGroup('播放控制', [
+    'playorpause',
+    'forward',
+    'rewind',
+    'skip',
+    'next',
+    'prev',
+  ]),
   _ShortcutGroup('音量', ['volumeup', 'volumedown', 'togglemute']),
-  _ShortcutGroup(
-      '画面与弹幕', ['fullscreen', 'exitfullscreen', 'screenshot', 'toggledanmaku']),
+  _ShortcutGroup('画面与弹幕', [
+    'fullscreen',
+    'exitfullscreen',
+    'screenshot',
+    'toggledanmaku',
+  ]),
   _ShortcutGroup('倍速', ['speed1', 'speed2', 'speed3', 'speedup', 'speeddown']),
 ];
 
@@ -40,6 +51,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
   late Map<String, List<String>> shortcuts;
 
   final FocusNode focusNode = FocusNode();
+  final _scroll = ScrollController();
 
   bool get isListening => listeningFunction != null && listeningIndex != null;
 
@@ -53,8 +65,9 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
         'shortcut_$key',
         defaultValue: defaultShortcuts[key]!.toList(),
       );
-      final keys =
-          stored.where((value) => value.isNotEmpty && value != '...').toList();
+      final keys = stored
+          .where((value) => value.isNotEmpty && value != '...')
+          .toList();
       var changed = keys.length != stored.length;
       if (keys.isEmpty) {
         keys.addAll(defaultShortcuts[key]!);
@@ -71,6 +84,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
   void dispose() {
     cancelListening();
     focusNode.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -194,8 +208,9 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
         groups.add(_ShortcutGroup(group.title, funcs));
       }
     }
-    final leftovers =
-        shortcuts.keys.where((func) => !covered.contains(func)).toList();
+    final leftovers = shortcuts.keys
+        .where((func) => !covered.contains(func))
+        .toList();
     if (leftovers.isNotEmpty) {
       groups.add(_ShortcutGroup('其他', leftovers));
     }
@@ -213,18 +228,34 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
         IconButton(
           icon: const Icon(Icons.settings_backup_restore_rounded),
           tooltip: '恢复默认',
-          onPressed: restoreDefaults,
+          onPressed: TvService.isTelevision ? null : restoreDefaults,
         ),
       ],
       body: FocusScope(
-        autofocus: true,
+        autofocus: !TvService.isTelevision,
         child: Focus(
           focusNode: focusNode,
-          autofocus: true,
+          autofocus: !TvService.isTelevision,
           canRequestFocus: true,
-          skipTraversal: true,
+          skipTraversal: !TvService.isTelevision,
           descendantsAreFocusable: true,
           onKeyEvent: (node, event) {
+            if (TvService.isTelevision &&
+                (event is KeyDownEvent || event is KeyRepeatEvent) &&
+                (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                    event.logicalKey == LogicalKeyboardKey.arrowDown)) {
+              if (_scroll.hasClients) {
+                final offset =
+                    _scroll.offset +
+                    (event.logicalKey == LogicalKeyboardKey.arrowDown
+                        ? 160
+                        : -160);
+                _scroll.jumpTo(
+                  offset.clamp(0, _scroll.position.maxScrollExtent).toDouble(),
+                );
+              }
+              return KeyEventResult.handled;
+            }
             if (event is! KeyDownEvent) return KeyEventResult.ignored;
             if (!isListening) return KeyEventResult.ignored;
 
@@ -236,6 +267,7 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
             return handled ? KeyEventResult.handled : KeyEventResult.ignored;
           },
           child: ListView(
+            controller: _scroll,
             padding: const EdgeInsets.all(16),
             children: [
               Center(
@@ -244,7 +276,10 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
-                      '点按按键标签，再按下新按键完成修改',
+                      TvService.isTelevision
+                          ? 'TV 版使用固定遥控操作，以下桌面快捷键只读。上下滚动，左键返回分类。\n'
+                                '确定：切换播放／暂停并显示控制栏；左右：快退／快进；返回：先收起控制栏。'
+                          : '点按按键标签，再按下新按键完成修改',
                       style: textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -256,7 +291,16 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
                 Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1000),
-                    child: _buildGroupCard(group),
+                    child: TvService.isTelevision
+                        ? ExcludeFocus(
+                            child: IgnorePointer(
+                              child: Opacity(
+                                opacity: 0.38,
+                                child: _buildGroupCard(group),
+                              ),
+                            ),
+                          )
+                        : _buildGroupCard(group),
                   ),
                 ),
             ],
@@ -267,17 +311,15 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
   }
 
   Widget _buildGroupCard(_ShortcutGroup group) => Padding(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: ContentSection(
-          title: group.title,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final func in group.functions) _buildShortcutRow(func),
-            ],
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 24),
+    child: ContentSection(
+      title: group.title,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [for (final func in group.functions) _buildShortcutRow(func)],
+      ),
+    ),
+  );
 
   Widget _buildShortcutRow(String func) {
     final textTheme = Theme.of(context).textTheme;
@@ -315,8 +357,9 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
       label: listening ? '按任意键' : keyAliases[keys[i]] ?? keys[i],
       listening: listening,
       onTap: () => onKeyCapTap(func, i),
-      onDelete:
-          realCount >= 2 && !listening ? () => onRemoveKey(func, i) : null,
+      onDelete: realCount >= 2 && !listening
+          ? () => onRemoveKey(func, i)
+          : null,
     );
   }
 }

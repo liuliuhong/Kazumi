@@ -1,10 +1,17 @@
-param([string]$ToolchainRoot = 'D:\KazumiToolchain')
+param(
+    [string]$ToolchainRoot = 'D:\KazumiToolchain',
+    [ValidatePattern('^\d+\.\d+\.\d+$')]
+    [string]$TvVersion = '1.1.0',
+    [ValidateRange(20308, 2100000000)]
+    [int]$TvBuildNumber = 20307110
+)
 
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/use-android.ps1" -ToolchainRoot $ToolchainRoot
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
-    flutter build apk --release --dart-define=KAZUMI_TV=true --target-platform=android-arm,android-arm64
+    $taskVersionName = "Kazumi_tv_base2.3.7_$TvVersion"
+    flutter build apk --release --dart-define=KAZUMI_TV=true --target-platform=android-arm,android-arm64 --build-name=$taskVersionName --build-number=$TvBuildNumber
     if ($LASTEXITCODE -ne 0) { throw 'TV APK build failed.' }
     New-Item -ItemType Directory -Force -Path 'build/tv' | Out-Null
     Copy-Item -LiteralPath 'build/app/outputs/flutter-apk/app-release.apk' -Destination 'build/tv/Kazumi-TV-arm-release.apk'

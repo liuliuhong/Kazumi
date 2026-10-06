@@ -6,6 +6,31 @@ import 'package:kazumi/services/platform/tv_service.dart';
 class TvNavigationRail extends StatefulWidget {
   const TvNavigationRail({super.key, required this.child});
   final Widget child;
+
+  /// Navigate an explicitly ordered rail without falling through at its ends.
+  static bool moveWithin(List<FocusNode> nodes, TraversalDirection direction) {
+    if (!TvService.isTelevision ||
+        (direction != TraversalDirection.up &&
+            direction != TraversalDirection.down)) {
+      return false;
+    }
+    final index = nodes.indexWhere((node) => node.hasPrimaryFocus);
+    if (index < 0) return false;
+    final next = (index + (direction == TraversalDirection.down ? 1 : -1))
+        .clamp(0, nodes.length - 1);
+    nodes[next].requestFocus();
+    final targetContext = nodes[next].context;
+    if (targetContext != null) {
+      Scrollable.ensureVisible(
+        targetContext,
+        alignmentPolicy: direction == TraversalDirection.up
+            ? ScrollPositionAlignmentPolicy.keepVisibleAtStart
+            : ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    }
+    return true;
+  }
+
   @override
   State<TvNavigationRail> createState() => _TvNavigationRailState();
 }
@@ -25,13 +50,7 @@ class _TvNavigationRailState extends State<TvNavigationRail> {
     final nodes =
         _scope.traversalDescendants.where((n) => n is! FocusScopeNode).toList()
           ..sort((a, b) => a.rect.top.compareTo(b.rect.top));
-    final index = nodes.indexOf(FocusManager.instance.primaryFocus!);
-    if (index >= 0) {
-      final next = (index + (direction == TraversalDirection.down ? 1 : -1))
-          .clamp(0, nodes.length - 1);
-      nodes[next].requestFocus();
-    }
-    return true;
+    return TvNavigationRail.moveWithin(nodes, direction);
   }
 
   @override

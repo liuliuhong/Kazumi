@@ -5,6 +5,8 @@ import 'package:flutter_modular/flutter_modular.dart';
 
 import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/widget/loading_indicator.dart';
+import 'package:kazumi/bean/widget/tv_scroll_top_on_focus.dart';
+import 'package:kazumi/services/platform/tv_service.dart';
 import 'package:kazumi/pages/plugin_editor/rule_management_widgets.dart';
 import 'package:kazumi/pages/plugin_editor/editor_form_widgets.dart';
 import 'package:kazumi/plugins/anti_crawler_config.dart';
@@ -433,6 +435,21 @@ class _PluginEditorPageState extends State<PluginEditorPage> {
     final colors = Theme.of(context).colorScheme;
     return SettingsDetailScaffold(
       title: const Text(_RuleEditorText.pageTitle),
+      leading: TvService.isTelevision
+          ? TvScrollTopOnFocus(
+              controller: _formScroll,
+              child: BackButton(
+                onPressed: () {
+                  final pane = SettingsPaneScope.of(context);
+                  if (pane != null) {
+                    pane.onBack();
+                  } else {
+                    context.pop();
+                  }
+                },
+              ),
+            )
+          : null,
       body: SafeArea(
         top: false,
         bottom: false,
@@ -467,15 +484,18 @@ class _PluginEditorPageState extends State<PluginEditorPage> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  EditorChoiceGroup<int>(
-                    value: _section,
-                    segments: const [
-                      ButtonSegment(value: 0, label: Text('基本')),
-                      ButtonSegment(value: 1, label: Text('搜索')),
-                      ButtonSegment(value: 2, label: Text('选集')),
-                      ButtonSegment(value: 3, label: Text('高级')),
-                    ],
-                    onChanged: (value) => setState(() => _section = value),
+                  TvScrollTopOnFocus(
+                    controller: _formScroll,
+                    child: EditorChoiceGroup<int>(
+                      value: _section,
+                      segments: const [
+                        ButtonSegment(value: 0, label: Text('基本')),
+                        ButtonSegment(value: 1, label: Text('搜索')),
+                        ButtonSegment(value: 2, label: Text('选集')),
+                        ButtonSegment(value: 3, label: Text('高级')),
+                      ],
+                      onChanged: (value) => setState(() => _section = value),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _buildCurrentSection(),

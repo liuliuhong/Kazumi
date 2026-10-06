@@ -122,6 +122,12 @@ class _TvPlayerControlsState extends State<TvPlayerControls> {
       if (event is KeyDownEvent) unawaited(widget.onPlayPause());
       return KeyEventResult.handled;
     }
+    final isConfirm =
+        key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.gameButtonA;
+    // A held remote button must not toggle again after revealing the controls.
+    if (isConfirm && event is KeyRepeatEvent) return KeyEventResult.handled;
     if (_visible) {
       _restartTimer();
       // System Back normally reaches PopScope; Escape helps desktop testing.
@@ -147,11 +153,13 @@ class _TvPlayerControlsState extends State<TvPlayerControls> {
       unawaited(_seek(key == LogicalKeyboardKey.arrowLeft ? -10 : 10));
       return KeyEventResult.handled;
     }
+    if (isConfirm) {
+      unawaited(widget.onPlayPause());
+      _show();
+      return KeyEventResult.handled;
+    }
     if (key == LogicalKeyboardKey.arrowUp ||
-        key == LogicalKeyboardKey.arrowDown ||
-        key == LogicalKeyboardKey.select ||
-        key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.gameButtonA) {
+        key == LogicalKeyboardKey.arrowDown) {
       if (event is KeyDownEvent) _show();
       return KeyEventResult.handled;
     }
@@ -256,7 +264,7 @@ class _TvPlayerControlsState extends State<TvPlayerControls> {
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        '方向键选择 · 确定执行 · 返回隐藏控制栏 · 隐藏后左右快进快退',
+                        '方向键选择 · 确定执行 · 返回隐藏控制栏 · 隐藏后确定播放/暂停，左右快进快退',
                         style: TextStyle(color: Colors.white70),
                       ),
                     ],

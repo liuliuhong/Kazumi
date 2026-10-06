@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_modular/flutter_modular.dart';
 
 import 'package:kazumi/bean/appbar/sys_app_bar.dart';
@@ -10,6 +11,7 @@ import 'package:kazumi/utils/constants.dart';
 import 'package:kazumi/bean/widget/tv_input_support.dart';
 import 'package:kazumi/services/platform/tv_service.dart';
 import 'package:kazumi/bean/widget/tv_menu_support.dart';
+import 'package:kazumi/bean/widget/tv_navigation_rail.dart';
 
 class _SettingsCategory {
   const _SettingsCategory({
@@ -233,6 +235,9 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!TvService.isTelevision) return false;
     final focused = FocusManager.instance.primaryFocus;
     if (focused == null) return false;
+    if (TvNavigationRail.moveWithin(_railFocus.values.toList(), direction)) {
+      return true;
+    }
     if (direction == TraversalDirection.right &&
         _railFocus.containsValue(focused)) {
       if (_lastPaneFocus?.context != null && _lastPaneFocus!.canRequestFocus) {
@@ -249,7 +254,8 @@ class _SettingsPageState extends State<SettingsPage> {
     if (direction == TraversalDirection.left &&
         pane is RenderBox &&
         focused.ancestors.contains(_paneFocus) &&
-        focused.rect.left <= pane.localToGlobal(Offset.zero).dx + 80) {
+        (_selectedCategoryPath == '/settings/keyboard' ||
+            focused.rect.left <= pane.localToGlobal(Offset.zero).dx + 80)) {
       _lastPaneFocus = focused;
       _railFocus[_selectedCategoryPath]?.requestFocus();
       return true;
@@ -379,6 +385,10 @@ class _SettingsMenu extends StatelessWidget {
     return ScrollConfiguration(
       behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
       child: ListView(
+        // Keep every category available to the remote's ordered navigation.
+        scrollCacheExtent: TvService.isTelevision
+            ? const ScrollCacheExtent.pixels(10000)
+            : null,
         padding: wide
             ? const EdgeInsets.fromLTRB(4, 0, 0, 12)
             : const EdgeInsets.fromLTRB(16, 8, 16, 24),
