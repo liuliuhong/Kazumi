@@ -71,48 +71,6 @@ TV 模式禁用桌面的字母键、组合键快捷操作，保留遥控器方�
 
 最新版 APK 包含 ARM 32 位和 ARM 64 位，已在小米盒子（HyperOS 3.0.2.0 / Android 14 / 32 位 ARM）安装并验证上述主要遥控流程。删除流程实测到确认弹窗并取消，未删除用户文件。10 个 TV 组件测试通过；完整 Windows 测试仍需要 `ech_http` 的 C++ 构建环境。未配置有效弹弹 play 凭证，因此不宣称弹幕加载已完成实机验证；音频和长时间播放稳定性仍需继续验证。
 
-## 屏幕截图
-
-<table>
-  <tr>
-    <td><img alt="homepage" src="static/screenshot/img_1.png"></td>
-    <td><img alt="timetable" src="static/screenshot/img_2.png"></td>
-    <td><img alt="details" src="static/screenshot/img_3.png"></td>
-  <tr>
-  <tr>
-    <td><img alt="selection-page" src="static/screenshot/img_4.png"></td>
-    <td><img alt="rules-mange" src="static/screenshot/img_5.png"></td>
-    <td><img alt="rules-edit" src="static/screenshot/img_6.png"></td>
-  <tr>
-</table>
-
-## 功能 / 开发计划
-
-- [X]  规则编辑器
-- [X]  番剧目录
-- [X]  番剧搜索
-- [X]  番剧时间表
-- [X]  番剧字幕
-- [X]  分集播放
-- [X]  视频播放器
-- [X]  多视频源支持
-- [X]  规则分享
-- [X]  硬件加速
-- [X]  高刷适配
-- [X]  追番列表
-- [X]  番剧弹幕
-- [X]  在线更新
-- [X]  历史记录
-- [X]  倍速播放
-- [X]  配色方案
-- [X]  跨设备同步
-- [X]  无线投屏 (DLNA)
-- [X]  外部播放器播放
-- [X]  超分辨率
-- [X]  一起看
-- [X]  番剧下载
-- [ ]  番剧更新提醒
-- [ ]  还有更多 (/・ω・＼)
 
 ## 下载
 
