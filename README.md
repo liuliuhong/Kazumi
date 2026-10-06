@@ -1,25 +1,17 @@
 <div align=center>
 
-<h1>Kazumi 32位 TV 兼容版</h1>
-
-<img src="assets/images/logo/logo_rounded.png" width=200></img>
+<h1>Kazumi TV 兼容版</h1>
 
 <a href="https://t.me/kazumi_app"><img src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white"></img></a>
-
-<img src="https://img.shields.io/badge/Flutter-03A9F4?style=for-the-badge&logo=flutter&logoColor=white"></img>
-<img src="https://img.shields.io/badge/Dart-00B4AB?style=for-the-badge&logo=Dart&logoColor=white"></img>
-
 <a href="https://trendshift.io/repositories/11432"><img src="https://trendshift.io/api/badge/trendshift/repositories/11432/yearly?language=Dart"></img></a>
 <a href="https://hellogithub.com/repository/Predidit/Kazumi" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=68d824ea55ee4b07aba6fe1dd61ac939&claim_uid=J9Qu6aDd8LT1nU0"/></img></a>
 
-<p>使用 Flutter 开发的基于自定义规则的番剧采集与在线观看程序。使用最多五行基于 <code>Xpath</code> 语法的选择器构建自己的规则。支持规则导入与规则分享。支持基于 <code>Anime4K</code> 的实时超分辨率。绝赞开发中 (～￣▽￣)～</p>
-</div>
 
 ## 社区 TV 兼容性构建声明
 
 本仓库是对 Kazumi 做的 TV 端兼容改造。明确声明：“是对kazimu做的tv端兼容改造。原项目版权、代码与维护归属于上游项目作者及贡献者。 本仓库仅为社区兼容性构建与分发用途。”
 
-上游项目：[Predidit/Kazumi](https://github.com/Predidit/Kazumi)。本仓库保留原项目的 GPL-3.0 许可证、美术资源版权、赞助及全部感谢声明；以下原项目介绍与声明继续保留。TV 改动由 OpenAI Codex 辅助开发，并经过组件测试与小米盒子实机验证。本构建不是上游官方发行版。
+上游项目：[Predidit/Kazumi](https://github.com/Predidit/Kazumi)。本仓库保留原项目的 GPL-3.0 许可证、美术资源版权、赞助及全部感谢声明；以下原项目介绍与声明继续保留。TV 改动经过组件测试与小米盒子实机验证。本构建不是上游官方发行版。
 
 [下载社区 TV 最新版](https://github.com/liuliuhong/Kazumi/releases/latest) · [2026-10-06 发布说明](docs/releases/tv-2026.10.06.md)
 
