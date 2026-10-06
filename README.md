@@ -1,6 +1,6 @@
 <div align=center>
 
-<h1>Kazumi TV 社区兼容版</h1>
+<h1>Kazumi 32位 TV 兼容版</h1>
 
 <img src="assets/images/logo/logo_rounded.png" width=200></img>
 
