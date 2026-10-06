@@ -1,6 +1,6 @@
-# Kazumi Android 32-bit 镜像仓库
+# Kazumi Android 32-bit tv版
 
-本仓库用于自动构建并提供基于上游 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 的 **Android 32 位电视版（`armeabi-v7a`）APK**。
+本仓库基于上游 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 的 **Android 32 位电视版（`armeabi-v7a`）APK**。
 
 > [!IMPORTANT]
 > 本仓库并非官方仓库，仅用于提供 **Android 32 位兼容版本**。
