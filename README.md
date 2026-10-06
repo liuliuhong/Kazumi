@@ -1,6 +1,4 @@
-<div align=center>
-
-<h1>Kazumi TV 兼容版</h1>
+<h1 align="center">Kazumi TV 兼容版</h1>
 
 
 ## 社区 TV 兼容性构建声明
