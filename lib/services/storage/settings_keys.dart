@@ -68,6 +68,12 @@ class SettingsKeys {
     true,
     group: SettingGroup.update,
   );
+  static const tvUpdateLastCheck = SettingKey<int>(
+    'tvUpdateLastCheck', 0, group: SettingGroup.update,
+  );
+  static const tvUpdateSkippedBuild = SettingKey<int>(
+    'tvUpdateSkippedBuild', 0, group: SettingGroup.update,
+  );
   static const alwaysOntop = SettingKey<bool>(
     _SettingBoxKey.alwaysOntop,
     false,
@@ -569,6 +575,8 @@ class SettingsKeys {
     searchEnhanceEnable,
     autoUpdate,
     checkPluginUpdateOnStartup,
+    tvUpdateLastCheck,
+    tvUpdateSkippedBuild,
     alwaysOntop,
     defaultPlaySpeed,
     defaultShortcutForwardPlaySpeed,

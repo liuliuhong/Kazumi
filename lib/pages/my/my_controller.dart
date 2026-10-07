@@ -8,6 +8,7 @@ import 'package:kazumi/repositories/download_repository.dart';
 import 'package:kazumi/repositories/history_repository.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/update/auto_updater.dart';
+import 'package:kazumi/services/update/tv_updater.dart';
 import 'package:kazumi/services/platform/tv_service.dart';
 import 'package:mobx/mobx.dart';
 
@@ -154,12 +155,8 @@ abstract class _MyController with Store {
   }
 
   Future<bool> checkUpdate({String type = 'manual'}) async {
-    // The upstream APK is a different app and does not contain TV adaptations.
     if (TvService.isTelevision) {
-      if (type == 'manual') {
-        KazumiDialog.showToast(message: 'TV 版请安装新的 Kazumi TV 安装包进行更新');
-      }
-      return false;
+      return TvUpdater.instance.check(automatic: type != 'manual');
     }
     try {
       final autoUpdater = AutoUpdater();

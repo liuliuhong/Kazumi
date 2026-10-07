@@ -41,8 +41,18 @@ class _TvAppSupportState extends State<TvAppSupport> {
         focused?.debugLabel != 'Video player shortcut scope') {
       Scrollable.ensureVisible(
         focusContext,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
       );
+      final box = focusContext.findRenderObject();
+      final scrollable = Scrollable.maybeOf(focusContext);
+      if (box is! RenderBox ||
+          scrollable == null ||
+          box.size.height <= scrollable.position.viewportDimension) {
+        Scrollable.ensureVisible(
+          focusContext,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        );
+      }
     }
     _scheduleUpdate();
     WidgetsBinding.instance.ensureVisualUpdate();

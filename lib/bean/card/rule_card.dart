@@ -14,6 +14,7 @@ class RuleCard extends StatelessWidget {
     this.selected = false,
     this.installed = false,
     this.focusNode,
+    this.singleTvAction = false,
   });
 
   final String title;
@@ -26,6 +27,7 @@ class RuleCard extends StatelessWidget {
   final bool selected;
   final bool installed;
   final FocusNode? focusNode;
+  final bool singleTvAction;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,9 @@ class RuleCard extends StatelessWidget {
             parentNode: Focus.maybeOf(context, scopeOk: true),
             canRequestFocus: false,
             skipTraversal: true,
-            child: trailing!,
+            child: TvService.isTelevision && singleTvAction
+                ? ExcludeFocus(child: trailing!)
+                : trailing!,
           );
     final duration = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero

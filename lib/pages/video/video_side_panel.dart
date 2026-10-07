@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:kazumi/bean/widget/tv_menu_support.dart';
 
 import 'package:flutter/material.dart';
 import 'package:kazumi/bean/widget/side_panel_transition.dart';
@@ -89,7 +90,11 @@ class VideoSidePanelState extends State<VideoSidePanel>
         return PopScope(
           canPop: !TvService.isTelevision,
           onPopInvokedWithResult: (didPop, _) {
-            if (!didPop && TvService.isTelevision) close();
+            if (!didPop &&
+                TvService.isTelevision &&
+                !TvMenuSupport.closeForBack()) {
+              close();
+            }
           },
           child: FocusScope(
             node: _tvFocus,

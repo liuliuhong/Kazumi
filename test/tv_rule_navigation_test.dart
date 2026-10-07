@@ -9,6 +9,66 @@ import 'package:kazumi/pages/plugin_editor/rule_management_widgets.dart';
 import 'package:kazumi/pages/plugin_editor/editor_form_widgets.dart';
 
 void main() {
+  testWidgets('catalog rows have one TV action when returning from start button', (
+    tester,
+  ) async {
+    final first = FocusNode();
+    final finish = FocusNode();
+    final activations = <int>[0, 0, 0];
+    final buttonNodes = List.generate(3, (_) => FocusNode());
+    await tester.pumpWidget(MaterialApp(
+      builder: (_, child) => TvAppSupport(child: child!),
+      home: Scaffold(body: Column(children: [
+        for (var index = 0; index < 3; index++)
+          RuleCard(
+            title: '安装规则 $index',
+            focusNode: index == 0 ? first : null,
+            singleTvAction: true,
+            onTap: () => activations[index]++,
+            trailing: FilledButton(
+              focusNode: buttonNodes[index],
+              onPressed: () => activations[index]++,
+              child: const Text('+ 安装'),
+            ),
+          ),
+        Align(alignment: Alignment.centerRight, child: FilledButton(
+          focusNode: finish,
+          onPressed: () {},
+          child: const Text('开始使用'),
+        )),
+      ])),
+    ));
+    first.requestFocus();
+    await tester.pumpAndSettle();
+    for (var cycle = 0; cycle < 3; cycle++) {
+      for (var index = 0; index < 3; index++) {
+        expect(FocusManager.instance.primaryFocus?.context
+            ?.findAncestorWidgetOfExactType<RuleCard>()?.title, '安装规则 $index');
+        expect(buttonNodes.any((node) => node.hasFocus), isFalse);
+        await tester.sendKeyEvent(LogicalKeyboardKey.select);
+        await tester.pumpAndSettle();
+        expect(activations[index], cycle * 2 + 1);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+      }
+      expect(finish.hasFocus, isTrue);
+      for (var index = 2; index >= 0; index--) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+        expect(FocusManager.instance.primaryFocus?.context
+            ?.findAncestorWidgetOfExactType<RuleCard>()?.title, '安装规则 $index');
+        expect(buttonNodes.any((node) => node.hasFocus), isFalse);
+        await tester.sendKeyEvent(LogicalKeyboardKey.select);
+        await tester.pumpAndSettle();
+        expect(activations[index], cycle * 2 + 2);
+      }
+    }
+    await tester.pumpWidget(const SizedBox());
+    first.dispose();
+    finish.dispose();
+    for (final node in buttonNodes) { node.dispose(); }
+  });
+
   testWidgets('editor upward navigation restores intro before tabs and toolbar', (
     tester,
   ) async {

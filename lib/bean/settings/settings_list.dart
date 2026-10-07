@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:kazumi/services/platform/tv_service.dart';
 
 import 'package:kazumi/bean/widget/content_section.dart';
 import 'package:kazumi/bean/widget/split_list_row.dart';
@@ -16,6 +18,9 @@ class SettingsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      scrollCacheExtent: TvService.isTelevision
+          ? const ScrollCacheExtent.pixels(10000)
+          : null,
       padding: const EdgeInsets.symmetric(vertical: 12),
       itemCount: sections.length,
       itemBuilder: (context, index) => Center(

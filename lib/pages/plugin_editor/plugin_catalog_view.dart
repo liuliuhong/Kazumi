@@ -324,6 +324,17 @@ class _PluginCatalogViewState extends State<PluginCatalogView> {
                     return RuleCard(
                       key: ValueKey(item.name),
                       title: item.name,
+                      singleTvAction: TvService.isTelevision,
+                      // A TV catalog entry has one focus target, including
+                      // while installing or after it becomes informational.
+                      onTap: TvService.isTelevision
+                          ? () {
+                              if (!busy &&
+                                  status != PluginCatalogItemStatus.installed) {
+                                unawaited(_install(item, status));
+                              }
+                            }
+                          : null,
                       installed: status == PluginCatalogItemStatus.installed,
                       subtitle: item.author.isEmpty
                           ? null

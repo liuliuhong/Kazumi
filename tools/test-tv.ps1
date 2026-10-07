@@ -15,6 +15,14 @@ $taskFiles = @(
     'lib/bean/widget/tv_history_row_navigation.dart',
     'lib/bean/widget/tv_rule_row_navigation.dart',
     'lib/bean/widget/tv_scroll_top_on_focus.dart',
+    'lib/bean/widget/tv_scroll_boundary.dart',
+    'lib/bean/widget/tv_content_action_navigation.dart',
+    'lib/bean/widget/tv_readable_item.dart',
+    'lib/pages/collect/collect_sync_dialog.dart',
+    'lib/modules/collect/collect_sync_plan.dart',
+    'lib/modules/bangumi/sync_priority.dart',
+    'lib/bean/widget/loading_indicator.dart',
+    'lib/bean/widget/state_presentation.dart',
     'lib/bean/card/rule_card.dart',
     'lib/pages/plugin_editor/rule_management_widgets.dart',
     'lib/pages/plugin_editor/editor_form_widgets.dart',
@@ -22,8 +30,18 @@ $taskFiles = @(
     'lib/bean/widget/side_panel_transition.dart',
     'lib/services/platform/tv_service.dart',
     'lib/utils/dandan_credentials.dart',
+    'lib/services/update/tv_update_manifest.dart',
+    'lib/services/update/tv_update_client.dart',
+    'lib/services/update/tv_update_controller.dart',
+    'lib/services/update/tv_update_dialog.dart',
     'lib/pages/player/tv_player_controls.dart',
     'lib/pages/video/video_side_panel.dart',
+    'lib/pages/video/episode_selection_panel.dart',
+    'lib/bean/widget/empty_state_widget.dart',
+    'lib/modules/roads/road_module.dart',
+    'lib/modules/download/download_module.dart',
+    'lib/modules/download/download_module.g.dart',
+    'test/tv_episode_panel_test.dart',
     'test/tv_player_controls_test.dart',
     'test/tv_side_panel_test.dart',
     'test/tv_input_support_test.dart',
@@ -33,7 +51,9 @@ $taskFiles = @(
     'test/tv_navigation_reading_test.dart',
     'test/tv_history_row_navigation_test.dart',
     'test/tv_rule_navigation_test.dart',
-    'test/tv_rule_sorting_test.dart'
+    'test/tv_rule_sorting_test.dart',
+    'test/tv_update_test.dart',
+    'test/tv_scroll_focus_test.dart'
 )
 foreach ($taskFile in $taskFiles) {
     $taskDestination = Join-Path $taskHarness $taskFile
@@ -45,6 +65,11 @@ name: kazumi
 environment:
   sdk: '>=3.10.0 <4.0.0'
 dependencies:
+  dio: ^5.11.0
+  crypto: ^3.0.6
+  material_new_shapes: ^1.0.0
+  hive_ce: ^2.16.0
+  scrollview_observer: ^1.22.0
   flutter:
     sdk: flutter
 dev_dependencies:

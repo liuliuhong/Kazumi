@@ -8,6 +8,14 @@
         android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:extractNativeLibs="true">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.tv_update_files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/tv_update_paths" />
+        </provider>
         <meta-data
              android:name="io.flutter.embedding.android.EnableImpeller"
              android:value="false" 
